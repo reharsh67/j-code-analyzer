@@ -23,7 +23,7 @@ public class JFileReaderAndParser {
         ParseResult<CompilationUnit> result = FileReaderAndParserHelper.parse(file);
         if (result.isSuccessful() && result.getResult().isPresent()){
             CompilationUnit cu = result.getResult().get();
-            FileReaderAndParserHelper.beautifyFile(cu);
+            Beautify.beautifyFile(cu);
             FileReaderAndParserHelper.writeFile(this.getPath(),cu);
         }
     }
