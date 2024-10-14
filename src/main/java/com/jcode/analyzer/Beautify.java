@@ -3,35 +3,62 @@ package com.jcode.analyzer;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import com.github.javaparser.metamodel.NameExprMetaModel;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Beautify {
 
     public static void beautifyFile(CompilationUnit cu) {
         List<ImportDeclaration> imports = cu.getImports();
-        if(imports != null) {
+        if (imports != null) {
             Set<String> usedImports = findUsedImports(cu);
             removeUnUsedImports(cu, usedImports, imports);
             removeWhiteSpace(cu);
+            removeUnUsedVariables(cu);
         }
+    }
+
+    private static void removeUnUsedVariables(CompilationUnit cu) {
+        Set<String> usedVariables = new HashSet<>();
+        cu.findAll(NameExpr.class).forEach(var -> usedVariables.add(var.getNameAsString()));
+
+        cu.findAll(VariableDeclarator.class).forEach(varDecl -> {
+            if (!usedVariables.contains(varDecl.getNameAsString())) {
+                varDecl.remove();
+            }
+        });
+
+        cu.findAll(FieldDeclaration.class).forEach(varDec -> {
+            if (varDec.getVariables().isEmpty()) {
+                varDec.remove();
+            }
+        });
+
     }
 
     private static void removeWhiteSpace(CompilationUnit cu) {
 
         cu.accept(new VoidVisitorAdapter<Void>() {
             private static final String INDENTATION = "    "; // Define consistent indentation (4 spaces here)
+
             @Override
             public void visit(BinaryExpr binaryExpr, Void arg) {
                 super.visit(binaryExpr, arg);
@@ -69,6 +96,7 @@ public class Beautify {
                 String code = forStmt.toString();
                 checkIndentation(forStmt, code);
             }
+
             // Function to check indentation of a block of code
             private void checkIndentation(Node node, String code) {
                 String[] lines = code.split("\n");
@@ -79,15 +107,15 @@ public class Beautify {
                     }
                 }
             }
-        },null);
+        }, null);
 
     }
 
-    private static void removeUnUsedImports(CompilationUnit cu,Set<String> usedImports, List<ImportDeclaration> imports) {
+    private static void removeUnUsedImports(CompilationUnit cu, Set<String> usedImports, List<ImportDeclaration> imports) {
         Iterator itr = imports.iterator();
-        while(itr.hasNext()){
+        while (itr.hasNext()) {
             ImportDeclaration id = (ImportDeclaration) itr.next();
-            if(!usedImports.contains(id.getName().getIdentifier().toString())){
+            if (!usedImports.contains(id.getName().getIdentifier().toString())) {
                 itr.remove();
             }
         }
@@ -99,24 +127,27 @@ public class Beautify {
             @Override
             public void visit(NameExpr n, Void arg) {
                 usedImports.add(n.getNameAsString());
-                super.visit(n,arg);
+                super.visit(n, arg);
             }
+
             @Override
-            public void visit(ObjectCreationExpr n, Void arg){
+            public void visit(ObjectCreationExpr n, Void arg) {
                 usedImports.add(n.getType().getNameAsString());
-                super.visit(n,arg);
+                super.visit(n, arg);
             }
+
             @Override
-            public void visit(MethodCallExpr n, Void arg){
+            public void visit(MethodCallExpr n, Void arg) {
                 usedImports.add(n.getNameAsString());
-                super.visit(n,arg);
+                super.visit(n, arg);
             }
+
             @Override
-            public void visit(ClassOrInterfaceType n, Void arg){
+            public void visit(ClassOrInterfaceType n, Void arg) {
                 usedImports.add(n.getNameAsString());
-                super.visit(n,arg);
+                super.visit(n, arg);
             }
-        },null);
+        }, null);
         return usedImports;
     }
 }
