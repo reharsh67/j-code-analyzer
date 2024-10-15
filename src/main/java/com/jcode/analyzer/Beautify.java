@@ -6,13 +6,20 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.BooleanLiteralExpr;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.stmt.SwitchStmt;
+import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.metamodel.NameExprMetaModel;
@@ -33,7 +40,99 @@ public class Beautify {
             removeUnUsedImports(cu, usedImports, imports);
             removeWhiteSpace(cu);
             removeUnUsedVariables(cu);
+            checkConditionalStmt(cu);
         }
+    }
+
+    private static void checkConditionalStmt(CompilationUnit cu) {
+
+        cu.accept(new VoidVisitorAdapter<Void>() {
+
+            @Override
+            public void visit(IfStmt n, Void args){
+                super.visit(n,args);
+                Expression condition = n.getCondition();
+                if(isComparisonWithBoolenLit(condition,BinaryExpr.Operator.EQUALS,true)){
+                    BinaryExpr binaryExpr = (BinaryExpr) condition;
+                    n.setCondition(binaryExpr.getLeft());
+                }
+                else if(isComparisonWithBoolenLit(condition, BinaryExpr.Operator.EQUALS,false)){
+                    BinaryExpr binaryExpr = (BinaryExpr) condition;
+                    n.setCondition(new UnaryExpr(binaryExpr.getLeft(),UnaryExpr.Operator.LOGICAL_COMPLEMENT));
+                }
+                else if(isComparisonWithBoolenLit(condition, BinaryExpr.Operator.NOT_EQUALS,true)){
+                    BinaryExpr binaryExpr = (BinaryExpr) condition;
+                    n.setCondition(new UnaryExpr(binaryExpr.getLeft(),UnaryExpr.Operator.LOGICAL_COMPLEMENT));
+                }
+                else if(isComparisonWithBoolenLit(condition, BinaryExpr.Operator.NOT_EQUALS,false)){
+                    BinaryExpr binaryExpr = (BinaryExpr) condition;
+                    n.setCondition(binaryExpr.getLeft());
+                }
+
+            }
+
+            @Override
+            public void visit(WhileStmt n, Void args){
+                super.visit(n,args);
+                Expression condition = n.getCondition();
+                if(isComparisonWithBoolenLit(condition, BinaryExpr.Operator.EQUALS,true)){
+                    BinaryExpr binaryExpr = (BinaryExpr) condition;
+                    n.setCondition(binaryExpr.getLeft());
+                }
+            }
+
+            @Override
+            public void visit(BlockStmt blockStmt, Void arg) {
+                super.visit(blockStmt, arg);
+
+                List<Statement> statements = blockStmt.getStatements();
+
+                for (int i = 0; i < statements.size() - 1; i++) {
+                    if (statements.get(i).isIfStmt()) {
+                        IfStmt outerIf = statements.get(i).asIfStmt();
+
+                        if (statements.get(i + 1).isIfStmt()) {
+                            IfStmt innerIf = statements.get(i + 1).asIfStmt();
+
+                            if (outerIf.getThenStmt().isBlockStmt() && outerIf.getThenStmt().asBlockStmt().getStatements().size() == 1 &&
+                                    outerIf.getThenStmt().asBlockStmt().getStatement(0).isIfStmt() &&
+                                    outerIf.getThenStmt().asBlockStmt().getStatement(0).asIfStmt().equals(innerIf)) {
+
+                                Expression combinedCondition = new BinaryExpr(
+                                        outerIf.getCondition(),
+                                        innerIf.getCondition(),
+                                        BinaryExpr.Operator.AND
+                                );
+                                IfStmt newIfStmt = new IfStmt(combinedCondition, innerIf.getThenStmt(), null);
+
+                                statements.set(i, newIfStmt);
+
+                                outerIf.getThenStmt().asBlockStmt().remove(innerIf);
+                            }
+                        }
+                    }
+                }
+            }
+            public boolean isComparisonWithBoolenLit(Expression condition, BinaryExpr.Operator operator, boolean b) {
+                if(condition.isBinaryExpr()){
+                    BinaryExpr binaryExpr = condition.asBinaryExpr();
+                    if(binaryExpr.getOperator() == operator){
+                        Expression left = binaryExpr.getLeft();
+                        Expression right = binaryExpr.getRight();
+                        if(right.isBooleanLiteralExpr()){
+                            BooleanLiteralExpr booleanLiteralExpr = right.asBooleanLiteralExpr();
+                            return booleanLiteralExpr.getValue() == b;
+                        }
+                        if(left.isBooleanLiteralExpr()){
+                            BooleanLiteralExpr booleanLiteralExpr = left.asBooleanLiteralExpr();
+                            return booleanLiteralExpr.getValue() == b;
+                        }
+                    }
+                }
+                return false;
+            }
+        },null);
+
     }
 
     private static void removeUnUsedVariables(CompilationUnit cu) {
@@ -95,6 +194,33 @@ public class Beautify {
                 // Check the indentation of the 'for' block
                 String code = forStmt.toString();
                 checkIndentation(forStmt, code);
+            }
+            @Override
+            public void visit(WhileStmt whileStmt, Void arg) {
+                super.visit(whileStmt, arg);
+
+                // Check for space after 'for' keyword
+                if (!whileStmt.toString().matches("for\\s*\\(")) {
+                    System.out.println("Improper space after 'while' keyword at line: " + whileStmt.getBegin().get().line);
+                }
+
+                // Check the indentation of the 'for' block
+                String code = whileStmt.toString();
+                checkIndentation(whileStmt, code);
+            }
+
+            @Override
+            public void visit(SwitchStmt switchStmt, Void arg) {
+                super.visit(switchStmt, arg);
+
+                // Check for space after 'for' keyword
+                if (!switchStmt.toString().matches("for\\s*\\(")) {
+                    System.out.println("Improper space after 'switch' keyword at line: " + switchStmt.getBegin().get().line);
+                }
+
+                // Check the indentation of the 'for' block
+                String code = switchStmt.toString();
+                checkIndentation(switchStmt, code);
             }
 
             // Function to check indentation of a block of code
