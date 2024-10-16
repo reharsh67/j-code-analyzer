@@ -24,6 +24,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.metamodel.NameExprMetaModel;
 import com.jcode.analyzer.visitors.ConditionalVisitor;
+import com.jcode.analyzer.visitors.EmptyStmtVisitor;
 import com.jcode.analyzer.visitors.WhiteSpaceAndIndentVisitor;
 
 import java.util.ArrayList;
@@ -33,16 +34,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.jcode.analyzer.visitors.VisitorHelper.removeEmptyStmt;
 import static com.jcode.analyzer.visitors.VisitorHelper.removeUnUsedImports;
 import static com.jcode.analyzer.visitors.VisitorHelper.removeUnUsedVariables;
 
 public class Beautify {
 
     public static void beautifyFile(CompilationUnit cu) {
-            removeUnUsedImports(cu);
-            cu.accept(new WhiteSpaceAndIndentVisitor(),null);
-            removeUnUsedVariables(cu);
-            cu.accept(new ConditionalVisitor(),null);
+        removeUnUsedImports(cu);
+        removeUnUsedVariables(cu);
+        removeEmptyStmt(cu);
+        cu.accept(new WhiteSpaceAndIndentVisitor(),null);
+        cu.accept(new ConditionalVisitor(),null);
     }
 
 }

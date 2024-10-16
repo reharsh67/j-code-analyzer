@@ -7,6 +7,8 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
@@ -29,6 +31,12 @@ public class VisitorHelper {
         cu.findAll(FieldDeclaration.class).forEach(varDec -> {
             if (varDec.getVariables().isEmpty()) {
                 varDec.remove();
+            }
+        });
+
+        cu.findAll(VariableDeclarationExpr.class).forEach(dVal -> {
+            if(dVal.getVariables().isEmpty()){
+                dVal.remove();
             }
         });
     }
@@ -74,5 +82,9 @@ public class VisitorHelper {
             }
         }, null);
         return usedImports;
+    }
+
+    public static void removeEmptyStmt(CompilationUnit cu){
+        cu.findAll(EmptyStmt.class).forEach(stmt -> stmt.remove());
     }
 }
