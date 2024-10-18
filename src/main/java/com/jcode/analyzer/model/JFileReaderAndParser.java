@@ -1,13 +1,13 @@
-package com.jcode.analyzer;
+package com.jcode.analyzer.model;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
+import com.jcode.analyzer.driver.Beautify;
+import com.jcode.analyzer.helper.FileReaderAndParserHelper;
 
 public class JFileReaderAndParser {
     private String path;

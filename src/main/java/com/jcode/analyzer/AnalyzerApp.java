@@ -1,37 +1,28 @@
 package com.jcode.analyzer;
 
+import com.jcode.analyzer.constants.JConstants;
+import com.jcode.analyzer.context.OperationContext;
+import com.jcode.analyzer.helper.ApplicationHelper;
+import com.jcode.analyzer.model.JFileReaderAndParser;
+
 import java.io.IOException;
+import java.util.Map;
 import java.util.Scanner;
 
 public class AnalyzerApp
 {
+        public static void main(String[] args ) throws IOException {
 
-    private static String VERBOSE = "--verbose";
-    public static void main( String[] args ) throws IOException {
+            ApplicationHelper.init();
+         Map argMap = ApplicationHelper.getArgMap();
+         ApplicationHelper.populateArgMap(args,argMap);
+            if(argMap.get(JConstants.PATH) == null) {
+                ApplicationHelper.getManualInput(argMap);
+         }
 
-        String path;
-        boolean verboseEnabled = false;
-        if(args.length > 0){
-            path = args[0];
-            if(args[1].equals(VERBOSE)) verboseEnabled = true;
-        }
-        else{
-            Scanner  sc = new Scanner(System.in);
-            System.out.println("Please provide path/to/your/java/file.java");
-            path = sc.nextLine();
-            System.out.println("Would you like verbose to be enabled Y/N ?");
-            String verVal = sc.nextLine();
-            if(verVal.equals("y")){
-                verboseEnabled = true;
-            }
-
-            JFileReaderAndParser read = new JFileReaderAndParser(path,verboseEnabled);
+            JFileReaderAndParser read = new JFileReaderAndParser(argMap.get(JConstants.PATH).toString(),(boolean)argMap.get(JConstants.VERBOSE));
             read.readAndParseFile();
 
         }
 
-
-
-
-    }
 }

@@ -1,4 +1,4 @@
-package com.jcode.analyzer;
+package com.jcode.analyzer.helper;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;

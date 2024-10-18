@@ -1,4 +1,4 @@
-package com.jcode.analyzer;
+package com.jcode.analyzer.driver;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
@@ -23,10 +23,15 @@ import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.metamodel.NameExprMetaModel;
+import com.jcode.analyzer.constants.JConstants;
+import com.jcode.analyzer.context.OperationContext;
 import com.jcode.analyzer.visitors.ConditionalVisitor;
 import com.jcode.analyzer.visitors.EmptyStmtVisitor;
+import com.jcode.analyzer.visitors.ImportsVisitor;
+import com.jcode.analyzer.visitors.UnUsedVariablesVisitor;
 import com.jcode.analyzer.visitors.WhiteSpaceAndIndentVisitor;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -34,18 +39,36 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.jcode.analyzer.visitors.VisitorHelper.removeEmptyStmt;
-import static com.jcode.analyzer.visitors.VisitorHelper.removeUnUsedImports;
-import static com.jcode.analyzer.visitors.VisitorHelper.removeUnUsedVariables;
 
 public class Beautify {
 
-    public static void beautifyFile(CompilationUnit cu) {
-        removeUnUsedImports(cu);
-        removeUnUsedVariables(cu);
-        removeEmptyStmt(cu);
-        cu.accept(new WhiteSpaceAndIndentVisitor(),null);
-        cu.accept(new ConditionalVisitor(),null);
+    public static void beautifyFile(CompilationUnit cu) throws IOException {
+        OperationContext ctx = OperationContext.getContext();
+        if((boolean)ctx.get(JConstants.ALL)) {
+            cu.accept(new ConditionalVisitor(), null);
+            new ImportsVisitor().analyze(cu);
+            new UnUsedVariablesVisitor().analyze(cu);
+            cu.accept(new WhiteSpaceAndIndentVisitor(), null);
+            new EmptyStmtVisitor().analyze(cu);
+
+        }
+        else{
+            if((boolean)ctx.get(JConstants.CONDITIONAL)){
+                cu.accept(new ConditionalVisitor(), null);
+            }
+            if((boolean)ctx.get(JConstants.INDENTANDWHITE)){
+                cu.accept(new WhiteSpaceAndIndentVisitor(), null);
+            }
+            if((boolean)ctx.get(JConstants.VAR)){
+                cu.accept(new UnUsedVariablesVisitor(),null);
+            }
+            if((boolean)ctx.get(JConstants.IMPORTS)){
+                cu.accept(new ImportsVisitor(),null);
+            }
+            if((boolean)ctx.get(JConstants.EMPTYSTMT)){
+                cu.accept(new EmptyStmtVisitor(),null);
+            }
+        }
     }
 
 }
