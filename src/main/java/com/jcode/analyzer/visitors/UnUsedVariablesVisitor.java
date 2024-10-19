@@ -1,12 +1,14 @@
 package com.jcode.analyzer.visitors;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 public class UnUsedVariablesVisitor extends VoidVisitorAdapter<Void> {
@@ -20,7 +22,13 @@ public class UnUsedVariablesVisitor extends VoidVisitorAdapter<Void> {
     @Override
     public void visit(VariableDeclarator varDecl, Void arg) {
         // Collect all declared variables
-        declaredVariables.add(varDecl);
+        boolean isConstant = varDecl.getParentNode()
+                .flatMap(parent -> parent instanceof FieldDeclaration ? Optional.of((FieldDeclaration) parent) : Optional.empty())
+                .map(fieldDecl -> fieldDecl.isStatic() && fieldDecl.isFinal())
+                .orElse(false);
+        if(!isConstant) {
+            declaredVariables.add(varDecl);
+        }
         super.visit(varDecl, arg);
     }
 

@@ -1,7 +1,9 @@
 package com.jcode.analyzer.constants;
 
 public class JConstants {
+
     public static final String PATH = "path";
+
     public static final String VERBOSE = "--verbose";
 
     public static final String ALL = "--all";
@@ -15,7 +17,4 @@ public class JConstants {
     public static final String VAR = "--var";
 
     public static final String IMPORTS = "--imports";
-
-
-
 }
