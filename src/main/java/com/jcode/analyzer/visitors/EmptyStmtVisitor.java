@@ -2,6 +2,7 @@ package com.jcode.analyzer.visitors;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.stmt.EmptyStmt;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import java.util.HashSet;
@@ -18,6 +19,13 @@ public class EmptyStmtVisitor extends VoidVisitorAdapter<Void> {
 
     public void analyze(CompilationUnit cu){
         cu.accept(this,null);
+
+        cu.findAll(ExpressionStmt.class).forEach(stmt -> {
+            if(stmt.getExpression().isVariableDeclarationExpr() && stmt.getExpression().asVariableDeclarationExpr().getVariables().isEmpty()){
+                stmt.remove();
+            }
+        });
+
         removeEmptyStmt();
     }
 

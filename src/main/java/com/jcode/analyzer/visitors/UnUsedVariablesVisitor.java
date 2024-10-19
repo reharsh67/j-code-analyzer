@@ -48,11 +48,11 @@ public class UnUsedVariablesVisitor extends VoidVisitorAdapter<Void> {
                 varDecl.remove(); // This removes the unused variable declaration
             }
         }
-//        for(VariableDeclarationExpr expr : declaredVariablesExpr){
-//            if(expr.getVariables().isEmpty()){
-//                expr.remove();
-//            }
-//        }
+        for(VariableDeclarationExpr expr : declaredVariablesExpr){
+            if(expr.getVariables().isEmpty()){
+                expr.remove();
+            }
+        }
     }
     public void analyze(CompilationUnit cu) {
         // Traverse the compilation unit with this analyzer
