@@ -19,13 +19,6 @@ public class EmptyStmtVisitor extends VoidVisitorAdapter<Void> {
 
     public void analyze(CompilationUnit cu){
         cu.accept(this,null);
-
-        cu.findAll(ExpressionStmt.class).forEach(stmt -> {
-            if(stmt.getExpression().isVariableDeclarationExpr() && stmt.getExpression().asVariableDeclarationExpr().getVariables().isEmpty()){
-                stmt.remove();
-            }
-        });
-
         removeEmptyStmt();
     }
 
