@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.jcode.analyzer.context.OperationContext;
@@ -13,6 +16,8 @@ import com.jcode.analyzer.driver.Beautify;
 import com.jcode.analyzer.helper.FileReaderAndParserHelper;
 
 public class JFileReaderAndParser {
+
+    private static final Logger logger = Logger.getLogger(JFileReaderAndParser.class.getName());
 
     private String path;
 
@@ -24,12 +29,11 @@ public class JFileReaderAndParser {
     }
 
     public void readAndParseFile() throws IOException, FileNotFoundException {
-        List lst = FileReaderAndParserHelper.getAllJavaFiles();
-        // Or choose another number
+        List<File> lst = FileReaderAndParserHelper.getAllJavaFiles();
         int numOfThreads = Runtime.getRuntime().availableProcessors();
+        logger.log(Level.INFO, "Number Of Processors: {0}", numOfThreads);
         ExecutorService executor = Executors.newFixedThreadPool(numOfThreads);
-        for (Object obj : lst) {
-            File file = (File) obj;
+        for (File file : lst) {
             OperationContext ctx = OperationContext.getContext().clone();
             executor.submit(() -> {
                 try {
@@ -40,14 +44,25 @@ public class JFileReaderAndParser {
                         synchronized (JFileReaderAndParser.class) {
                             FileReaderAndParserHelper.writeFile(file.getPath(), cu);
                         }
+                        if (verboseEnable) {
+                            logger.log(Level.INFO, "Successfully processed file: {0}", file.getPath());
+                        }
                     }
                 } catch (Exception e) {
-                    System.out.println("Error processing file: " + file.getPath());
-                    e.printStackTrace();
+                    logger.log(Level.SEVERE, "Error processing file: " + file.getPath(), e);
                 }
             });
         }
+        // Shutdown and await termination
         executor.shutdown();
+        try {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            logger.log(Level.SEVERE, "Executor interrupted during shutdown", e);
+        }
     }
 
     public String getPath() {
