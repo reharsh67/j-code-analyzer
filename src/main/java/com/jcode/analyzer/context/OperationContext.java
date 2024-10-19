@@ -11,6 +11,7 @@ public abstract class OperationContext {
     public abstract void setApplicationContext(Map context);
     public abstract Map getApplicationContext();
     public abstract Object get(String name);
+    public abstract OperationContext clone();
 
 
 }

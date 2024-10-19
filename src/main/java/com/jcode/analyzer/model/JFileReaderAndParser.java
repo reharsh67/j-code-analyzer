@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.jcode.analyzer.context.OperationContext;
+import com.jcode.analyzer.context.OperationContextImpl;
 import com.jcode.analyzer.driver.Beautify;
 import com.jcode.analyzer.helper.FileReaderAndParserHelper;
 
@@ -22,15 +25,28 @@ public class JFileReaderAndParser {
 
     public void readAndParseFile() throws IOException, FileNotFoundException {
         List lst = FileReaderAndParserHelper.getAllJavaFiles();
+        int numOfThreads = Runtime.getRuntime().availableProcessors();  // Or choose another number
+        ExecutorService executor = Executors.newFixedThreadPool(numOfThreads);
         for(Object obj : lst) {
             File file = (File) obj;
+            OperationContext ctx = OperationContext.getContext().clone();
+            executor.submit(() -> {
+                try {
             ParseResult<CompilationUnit> result = FileReaderAndParserHelper.parse(file);
             if (result.isSuccessful() && result.getResult().isPresent()) {
                 CompilationUnit cu = result.getResult().get();
-                Beautify.beautifyFile(cu);
-                FileReaderAndParserHelper.writeFile(file.getPath(), cu);
+                Beautify.beautifyFile(cu,ctx);
+                synchronized (JFileReaderAndParser.class) {
+                    FileReaderAndParserHelper.writeFile(file.getPath(), cu);
+                }
             }
+                } catch (Exception e) {
+                    System.out.println("Error processing file: " + file.getPath());
+                    e.printStackTrace();
+                }
+            });
         }
+        executor.shutdown();
     }
 
     public String getPath() {

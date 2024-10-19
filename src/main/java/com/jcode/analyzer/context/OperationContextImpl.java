@@ -29,7 +29,19 @@ public class OperationContextImpl extends OperationContext{
             return null;
         return applicationData.get(name);
     }
+
+    @Override
+    public OperationContextImpl clone() {
+        return new OperationContextImpl(this);
+    }
+
     public static void setContext(OperationContext txContext) {
         context.set(txContext);
+    }
+    public OperationContextImpl(){
+
+    }
+    public OperationContextImpl(OperationContext other) {
+        this.applicationData = new HashMap<>(other.getApplicationContext());  // Deep copy of operations
     }
 }

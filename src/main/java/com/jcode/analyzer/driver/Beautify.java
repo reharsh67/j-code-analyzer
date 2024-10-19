@@ -42,8 +42,7 @@ import java.util.stream.Collectors;
 
 public class Beautify {
 
-    public static void beautifyFile(CompilationUnit cu) throws IOException {
-        OperationContext ctx = OperationContext.getContext();
+    public static void beautifyFile(CompilationUnit cu,OperationContext ctx) throws IOException {
         if((boolean)ctx.get(JConstants.ALL)) {
             cu.accept(new ConditionalVisitor(), null);
             new ImportsVisitor().analyze(cu);
