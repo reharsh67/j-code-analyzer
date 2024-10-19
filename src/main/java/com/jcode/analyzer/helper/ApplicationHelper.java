@@ -4,6 +4,7 @@ import com.jcode.analyzer.constants.JConstants;
 import com.jcode.analyzer.context.OperationContext;
 import com.jcode.analyzer.context.OperationContextImpl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,61 +27,96 @@ public class ApplicationHelper {
     }
 
     public static void populateArgMap(String[] args, Map argMap) {
-        List argList = Arrays.asList(args);
-        if(argList.size() > 0){
-           argMap.put(JConstants.PATH,argList.get(0));
-            OperationContext.getContext().add2ApplicationContext(JConstants.PATH,argList.get(0));
-            if(argList.contains(JConstants.VERBOSE)){
-                argMap.put(JConstants.VERBOSE,true);
-                OperationContext.getContext().add2ApplicationContext(JConstants.VERBOSE,true);
+        List<File> files = new ArrayList<>();
+        OperationContext ctx = OperationContext.getContext();
+        for(String arg: args){
+            if(arg.startsWith("--")){
+                switch (arg){
+                    case JConstants.PATH:
+                        argMap.put(JConstants.VERBOSE,true);
+                        ctx.add2ApplicationContext(JConstants.VERBOSE,true);
+
+                    case JConstants.ALL:
+                        argMap.put(JConstants.ALL,true);
+                        ctx.add2ApplicationContext(JConstants.ALL,true);
+
+                    case JConstants.CONDITIONAL:
+                        argMap.put(JConstants.CONDITIONAL,true);
+                        ctx.add2ApplicationContext(JConstants.CONDITIONAL,true);
+
+                    case JConstants.VAR:
+                            argMap.put(JConstants.VAR,true);
+                            ctx.add2ApplicationContext(JConstants.VAR,true);
+
+                    case JConstants.INDENTANDWHITE:
+                            argMap.put(JConstants.INDENTANDWHITE,true);
+                            ctx.add2ApplicationContext(JConstants.INDENTANDWHITE,true);
+
+                    case JConstants.IMPORTS:
+                            argMap.put(JConstants.IMPORTS,true);
+                            ctx.add2ApplicationContext(JConstants.IMPORTS,true);
+
+                    case JConstants.EMPTYSTMT:
+                            argMap.put(JConstants.EMPTYSTMT,true);
+                            ctx.add2ApplicationContext(JConstants.EMPTYSTMT,true);
+
+                    default:
+                        argMap.put(JConstants.ALL,true);
+                        ctx.add2ApplicationContext(JConstants.ALL,true);
+
+                }
             }
-           if(argList.contains(JConstants.ALL)){
-               argMap.put(JConstants.ALL,true);
-               OperationContext.getContext().add2ApplicationContext(JConstants.ALL,true);
-           }
-           else{
-               if(argList.contains(JConstants.CONDITIONAL)){
-                   argMap.put(JConstants.CONDITIONAL,true);
-                   OperationContext.getContext().add2ApplicationContext(JConstants.CONDITIONAL,true);
-               }
-               if(argList.contains(JConstants.VAR)){
-                   argMap.put(JConstants.EMPTYSTMT,true);
-                   argMap.put(JConstants.VAR,true);
-                   OperationContext.getContext().add2ApplicationContext(JConstants.EMPTYSTMT,true);
-                   OperationContext.getContext().add2ApplicationContext(JConstants.VAR,true);
-               }
-               if(argList.contains(JConstants.INDENTANDWHITE)){
-                   argMap.put(JConstants.INDENTANDWHITE,true);
-                   OperationContext.getContext().add2ApplicationContext(JConstants.INDENTANDWHITE,true);
-               }
-               if(argList.contains(JConstants.IMPORTS)){
-                   argMap.put(JConstants.IMPORTS,true);
-                   OperationContext.getContext().add2ApplicationContext(JConstants.IMPORTS,true);
-               }
-           }
+            else{
+                File file = new File(arg);
+                if (file.exists()) {
+                    argMap.put(JConstants.PATH,true);
+                    ctx.add2ApplicationContext(JConstants.PATH,file.getAbsolutePath());
+                    files.add(file);
+                } else {
+                    System.out.println("File or directory not found: " + arg);
+                }
+            }
         }
-        OperationContext.getContext().add2ApplicationContext("JARGS",argMap);
+        ctx.add2ApplicationContext("FileList",files);
+        ctx.add2ApplicationContext("JARGS",argMap);
     }
 
+
     public static void getManualInput(Map argMap) {
+        List<File> files = new ArrayList<>();
+        OperationContext ctx = OperationContext.getContext();
+        String path = null;
         Scanner sc = new Scanner(System.in);
-        System.out.println("Please provide path/to/your/java/file.java");
-        String path = sc.nextLine();
-        OperationContext.getContext().add2ApplicationContext(JConstants.PATH,path);
-        argMap.put(JConstants.PATH,path);
-        System.out.println("Would you like verbose to be enabled Y/N ?");
-        String verVal = sc.nextLine();
-        if (verVal.equals("y")) {
-            argMap.put(JConstants.VERBOSE,true);
-            OperationContext.getContext().add2ApplicationContext(JConstants.VERBOSE,true);
+        {
+            System.out.println("Please provide path/to/your/java/file.java");
+            path = sc.nextLine();
+            File file = new File(path);
+            if (file.exists()) {
+                argMap.put(JConstants.PATH, true);
+                ctx.add2ApplicationContext(JConstants.PATH, file.getAbsolutePath());
+                files.add(file);
+            } else {
+                System.out.println("File or directory not found: " + path);
+            }
         }
-        else{
-            argMap.put(JConstants.VERBOSE,false);
-            OperationContext.getContext().add2ApplicationContext(JConstants.VERBOSE,false);
+        {
+            System.out.println("Would you like verbose to be enabled Y/N ?");
+            String verVal = sc.nextLine();
+            if (verVal.equals("y")) {
+                argMap.put(JConstants.VERBOSE, true);
+                ctx.add2ApplicationContext(JConstants.VERBOSE, true);
+            } else {
+                argMap.put(JConstants.VERBOSE, false);
+                ctx.add2ApplicationContext(JConstants.VERBOSE, false);
+            }
         }
         System.out.println("Since this is manual input we will consider all the option may be will add support for options later.");
         argMap.put(JConstants.ALL,true);
-        OperationContext.getContext().add2ApplicationContext(JConstants.ALL,true);
+        argMap.put(JConstants.PATH,path);
+
+        ctx.add2ApplicationContext(JConstants.PATH,path);
+        ctx.add2ApplicationContext("FileList",files);
+        ctx.add2ApplicationContext(JConstants.ALL,true);
     }
 
     public static void init() {

@@ -3,9 +3,11 @@ package com.jcode.analyzer.model;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
+import com.jcode.analyzer.context.OperationContext;
 import com.jcode.analyzer.driver.Beautify;
 import com.jcode.analyzer.helper.FileReaderAndParserHelper;
 
@@ -19,12 +21,15 @@ public class JFileReaderAndParser {
     }
 
     public void readAndParseFile() throws IOException, FileNotFoundException {
-        File file = new File(this.getPath());
-        ParseResult<CompilationUnit> result = FileReaderAndParserHelper.parse(file);
-        if (result.isSuccessful() && result.getResult().isPresent()){
-            CompilationUnit cu = result.getResult().get();
-            Beautify.beautifyFile(cu);
-            FileReaderAndParserHelper.writeFile(this.getPath(),cu);
+        List lst = FileReaderAndParserHelper.getAllJavaFiles();
+        for(Object obj : lst) {
+            File file = (File) obj;
+            ParseResult<CompilationUnit> result = FileReaderAndParserHelper.parse(file);
+            if (result.isSuccessful() && result.getResult().isPresent()) {
+                CompilationUnit cu = result.getResult().get();
+                Beautify.beautifyFile(cu);
+                FileReaderAndParserHelper.writeFile(file.getPath(), cu);
+            }
         }
     }
 
