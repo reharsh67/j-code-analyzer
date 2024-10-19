@@ -10,6 +10,10 @@ The Java Code Analyzer is a tool designed to analyze Java code for various codin
 - **Empty Statement Removal**: Identifies and removes empty statements from the code.
 - **Import Statement Analysis**: Handles import statements, ensuring they are organized and necessary.
 
+## WARN!!
+
+----**Makesure you have commited your changes before you run the tool!**
+
 ## Getting Started
 
 ### Prerequisites
@@ -46,6 +50,7 @@ The Java Code Analyzer is a tool designed to analyze Java code for various codin
     
 ## Contributing
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+Suggestions also welcomed!.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
