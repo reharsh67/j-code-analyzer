@@ -3,9 +3,10 @@ package com.jcode.analyzer.context;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OperationContextImpl extends OperationContext{
+public class OperationContextImpl extends OperationContext {
 
     private Map applicationData;
+
     @Override
     public void add2ApplicationContext(String name, Object value) {
         if (applicationData == null) {
@@ -38,10 +39,12 @@ public class OperationContextImpl extends OperationContext{
     public static void setContext(OperationContext txContext) {
         context.set(txContext);
     }
-    public OperationContextImpl(){
 
+    public OperationContextImpl() {
     }
+
     public OperationContextImpl(OperationContext other) {
-        this.applicationData = new HashMap<>(other.getApplicationContext());  // Deep copy of operations
+        // Deep copy of operations
+        this.applicationData = new HashMap<>(other.getApplicationContext());
     }
 }

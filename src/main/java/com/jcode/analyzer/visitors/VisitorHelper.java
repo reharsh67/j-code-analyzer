@@ -16,7 +16,6 @@ import com.jcode.analyzer.constants.JConstants;
 import com.jcode.analyzer.context.OperationContext;
 import com.jcode.analyzer.helper.FileReaderAndParserHelper;
 import com.jcode.analyzer.model.JFileReaderAndParser;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
@@ -25,6 +24,4 @@ import java.util.List;
 import java.util.Set;
 
 public class VisitorHelper {
-
-
 }
