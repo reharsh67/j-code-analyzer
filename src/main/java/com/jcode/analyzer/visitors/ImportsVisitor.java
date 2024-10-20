@@ -7,22 +7,28 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashSet;
 import java.util.Set;
 
 public class ImportsVisitor extends VoidVisitorAdapter<Void> {
 
+    // Initialize SLF4J logger
+    private static final Logger logger = LoggerFactory.getLogger(ImportsVisitor.class);
+
     // Set to store used imports
-    Set<String> usedImports = new HashSet<>();
+    private Set<String> usedImports = new HashSet<>();
 
     // Set to store all imports in the CompilationUnit
-    Set<ImportDeclaration> allImports = new HashSet<>();
+    private Set<ImportDeclaration> allImports = new HashSet<>();
 
     @Override
     public void visit(NameExpr n, Void arg) {
         // Track the usage of specific class names in the code
         usedImports.add(n.getNameAsString());
-        System.out.println("Tracking usage of class: " + n.getNameAsString());
+        logger.info("Tracking usage of class: {}", n.getNameAsString());
         super.visit(n, arg);
     }
 
@@ -30,7 +36,7 @@ public class ImportsVisitor extends VoidVisitorAdapter<Void> {
     public void visit(ObjectCreationExpr n, Void arg) {
         // Track the usage of object creation types
         usedImports.add(n.getType().getNameAsString());
-        System.out.println("Tracking usage of object creation: " + n.getType().getNameAsString());
+        logger.info("Tracking usage of object creation: {}", n.getType().getNameAsString());
         super.visit(n, arg);
     }
 
@@ -38,7 +44,7 @@ public class ImportsVisitor extends VoidVisitorAdapter<Void> {
     public void visit(MethodCallExpr n, Void arg) {
         // Track the usage of method calls
         usedImports.add(n.getNameAsString());
-        System.out.println("Tracking usage of method: " + n.getNameAsString());
+        logger.info("Tracking usage of method: {}", n.getNameAsString());
         super.visit(n, arg);
     }
 
@@ -46,7 +52,7 @@ public class ImportsVisitor extends VoidVisitorAdapter<Void> {
     public void visit(ClassOrInterfaceType n, Void arg) {
         // Track the usage of class/interface types
         usedImports.add(n.getNameAsString());
-        System.out.println("Tracking usage of class/interface type: " + n.getNameAsString());
+        logger.info("Tracking usage of class/interface type: {}", n.getNameAsString());
         super.visit(n, arg);
     }
 
@@ -54,33 +60,37 @@ public class ImportsVisitor extends VoidVisitorAdapter<Void> {
     public void visit(ImportDeclaration n, Void args) {
         // Track all import declarations
         allImports.add(n);
-        System.out.println("Tracking import: " + n.getName().getIdentifier());
+        logger.info("Tracking import: {}", n.getName().getIdentifier());
         super.visit(n, args);
     }
 
     // Method to remove unused imports from the CompilationUnit
     public void removeUnusedImports() {
         if (!allImports.isEmpty() && !usedImports.isEmpty()) {
-            System.out.println("Checking for unused imports...");
+            logger.info("Checking for unused imports...");
             for (ImportDeclaration id : allImports) {
                 // If the import is not found in the used imports set, it is removed
                 if (!usedImports.contains(id.getName().getIdentifier())) {
-                    System.out.println("Removing unused import: " + id.getName().getIdentifier());
+                    logger.info("Removing unused import: {}", id.getName().getIdentifier());
                     id.remove();
                 }
             }
         } else {
-            System.out.println("No imports to remove.");
+            logger.info("No unused imports found.");
         }
     }
 
     // Analyze the CompilationUnit to find and remove unused imports
     public void analyze(CompilationUnit cu) {
-        System.out.println("Starting import analysis...");
-        // Traverse the CompilationUnit
-        cu.accept(this, null);
-        // Remove any unused imports
-        removeUnusedImports();
-        System.out.println("Import analysis completed.");
+        logger.info("Starting import analysis...");
+        try {
+            // Traverse the CompilationUnit
+            cu.accept(this, null);
+            // Remove any unused imports
+            removeUnusedImports();
+            logger.info("Import analysis completed.");
+        } catch (Exception e) {
+            logger.error("Error during import analysis: {}", e.getMessage());
+        }
     }
 }

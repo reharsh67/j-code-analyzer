@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -31,13 +32,15 @@ public class FileReaderAndParserHelper {
             logger.info("Successfully parsed file: {}", file.getPath());
         } else {
             logger.error("Error parsing file: {}", file.getPath());
+            result.getProblems().forEach(problem ->
+                    logger.error("Problem at line {}: {}", problem.getLocation().orElse(null), problem.getMessage()));
         }
         return result;
     }
 
     // Method to write the CompilationUnit back to a file
     public static void writeFile(String path, CompilationUnit cu) throws IOException {
-        Files.write(Paths.get(path), cu.toString().getBytes());
+        Files.write(Paths.get(path), cu.toString().getBytes(StandardCharsets.UTF_8));
         // Log confirmation message after writing to the file
         logger.info("Successfully wrote to file: {}", path);
     }
@@ -49,14 +52,20 @@ public class FileReaderAndParserHelper {
         List<File> files = (List<File>) ctx.get("FileList");
         List<File> javaFiles = new ArrayList<>();
 
-        // Iterate through the files and collect Java files
-        for (File file : files) {
-            if (file.isDirectory()) {
-                // Recursively find Java files in the directory
-                findJavaFilesInDirectory(file, javaFiles);
-            } else if (file.getName().endsWith(".java")) {
-                javaFiles.add(file);
+        // Check if the list of files is null
+        if (files != null) {
+            // Iterate through the files and collect Java files
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    // Recursively find Java files in the directory
+                    findJavaFilesInDirectory(file, javaFiles);
+                } else if (file.getName().endsWith(".java")) {
+                    javaFiles.add(file);
+                    logger.info("Found Java file: {}", file.getPath());
+                }
             }
+        } else {
+            logger.warn("No files found in the context.");
         }
 
         // Log the number of Java files found

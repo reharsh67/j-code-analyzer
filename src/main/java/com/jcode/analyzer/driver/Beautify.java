@@ -20,16 +20,21 @@ public class Beautify {
 
     // Method to beautify the Java file represented by the CompilationUnit
     public static void beautifyFile(CompilationUnit cu, OperationContext ctx) throws IOException {
-        // Check if all beautification options are enabled
-        if (Boolean.TRUE.equals(ctx.get(JConstants.ALL))) {
-            logger.info("Applying all beautification options...");
-            applyAllVisitors(cu);
-        } else {
-            // Apply individual beautification options based on the context
-            applySelectedVisitors(cu, ctx);
+        try {
+            // Check if all beautification options are enabled
+            if (Boolean.TRUE.equals(ctx.get(JConstants.ALL))) {
+                logger.info("Applying all beautification options...");
+                applyAllVisitors(cu);
+            } else {
+                // Apply individual beautification options based on the context
+                applySelectedVisitors(cu, ctx);
+            }
+            // Log completion message
+            logger.info("Beautification process completed for: {}", cu.getPrimaryTypeName().orElse("Unnamed class"));
+        } catch (Exception e) {
+            logger.error("Beautification process failed for: {}", cu.getPrimaryTypeName().orElse("Unnamed class"), e);
+            throw new IOException("Error during beautification", e);
         }
-        // Log completion message
-        logger.info("Beautification process completed.");
     }
 
     // Method to apply all visitors

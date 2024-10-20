@@ -14,7 +14,29 @@ public class OperationContextImpl extends OperationContext {
     // Concurrent Map to store application-level data
     private Map<String, Object> applicationData;
 
-    // Method to add a key-value pair to the application context
+    /**
+     * Default constructor initializes the application data map.
+     */
+    public OperationContextImpl() {
+        applicationData = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Copy constructor for deep cloning.
+     *
+     * @param other The other OperationContext to clone.
+     */
+    public OperationContextImpl(OperationContext other) {
+        this.applicationData = new ConcurrentHashMap<>(other.getApplicationContext());
+        logger.info("OperationContextImpl cloned: {}", applicationData);
+    }
+
+    /**
+     * Adds a key-value pair to the application context.
+     *
+     * @param name The key to add.
+     * @param value The value associated with the key.
+     */
     @Override
     public void add2ApplicationContext(String name, Object value) {
         if (applicationData == null) {
@@ -24,20 +46,33 @@ public class OperationContextImpl extends OperationContext {
         logger.info("Added to application context: {} = {}", name, value);
     }
 
-    // Method to set the entire application context from a Map
+    /**
+     * Sets the entire application context from a Map.
+     *
+     * @param map The map containing key-value pairs to set in the application context.
+     */
     @Override
     public void setApplicationContext(Map<String, Object> map) {
         applicationData = new ConcurrentHashMap<>(map);
         logger.info("Application context set: {}", applicationData);
     }
 
-    // Method to retrieve the entire application context as a Map
+    /**
+     * Retrieves the entire application context as a Map.
+     *
+     * @return The current application context as a Map.
+     */
     @Override
     public Map<String, Object> getApplicationContext() {
         return applicationData;
     }
 
-    // Method to get a specific value from the application context by key
+    /**
+     * Retrieves a specific value from the application context by key.
+     *
+     * @param name The key to look up.
+     * @return The value associated with the key, or null if not found.
+     */
     @Override
     public Object get(String name) {
         if (applicationData == null) {
@@ -49,27 +84,23 @@ public class OperationContextImpl extends OperationContext {
         return value;
     }
 
-    // Method to clone the current OperationContextImpl
+    /**
+     * Clones the current OperationContextImpl.
+     *
+     * @return A new instance of OperationContextImpl that is a clone of the current instance.
+     */
     @Override
     public OperationContextImpl clone() {
         return new OperationContextImpl(this);
     }
 
-    // Method to set the context for the current thread
+    /**
+     * Sets the context for the current thread.
+     *
+     * @param txContext The OperationContext to set.
+     */
     public static void setContext(OperationContext txContext) {
         context.set(txContext);
         logger.info("Context set for thread: {}", txContext);
-    }
-
-    // Default constructor
-    public OperationContextImpl() {
-        applicationData = new ConcurrentHashMap<>();
-    }
-
-    // Copy constructor for deep cloning
-    public OperationContextImpl(OperationContext other) {
-        // Deep copy of the application context
-        this.applicationData = new ConcurrentHashMap<>(other.getApplicationContext());
-        logger.info("OperationContextImpl cloned: {}", applicationData);
     }
 }

@@ -1,13 +1,11 @@
 package com.jcode.analyzer.model;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -22,7 +20,6 @@ public class JFileReaderAndParser {
     private static final Logger logger = LoggerFactory.getLogger(JFileReaderAndParser.class);
 
     private String path;
-
     private boolean verboseEnable;
 
     public JFileReaderAndParser(String path, boolean verboseEnable) {
@@ -30,37 +27,52 @@ public class JFileReaderAndParser {
         this.verboseEnable = verboseEnable;
     }
 
-    public void readAndParseFile() throws IOException, FileNotFoundException {
-        List<File> lst = FileReaderAndParserHelper.getAllJavaFiles();
+    public void readAndParseFile() throws IOException {
+        List<File> javaFiles = FileReaderAndParserHelper.getAllJavaFiles();
         int numOfThreads = Runtime.getRuntime().availableProcessors();
-        logger.info("Number Of Processors: {0}", numOfThreads);
+        logger.info("Number of processors: {}", numOfThreads);
+
         ExecutorService executor = Executors.newFixedThreadPool(numOfThreads);
-        for (File file : lst) {
+        for (File file : javaFiles) {
             OperationContext ctx = OperationContext.getContext().clone();
-            executor.submit(() -> {
-                try {
-                    ParseResult<CompilationUnit> result = FileReaderAndParserHelper.parse(file);
-                    if (result.isSuccessful() && result.getResult().isPresent()) {
-                        CompilationUnit cu = result.getResult().get();
-                        Beautify.beautifyFile(cu, ctx);
-                        synchronized (JFileReaderAndParser.class) {
-                            FileReaderAndParserHelper.writeFile(file.getPath(), cu);
-                        }
-                        if (verboseEnable) {
-                            logger.info("Successfully processed file: {0}", file.getPath());
-                        }
-                    }
-                } catch (Exception e) {
-                    logger.error("Error processing file: " + file.getPath(), e);
-                }
-            });
+            executor.submit(() -> processFile(file,ctx));
         }
 
-        // Shutdown and await termination
+        shutdownExecutor(executor);
+    }
+
+    private void processFile(File file, OperationContext ctx) {
+        try {
+            ParseResult<CompilationUnit> result = FileReaderAndParserHelper.parse(file);
+            if (result.isSuccessful() && result.getResult().isPresent()) {
+                CompilationUnit cu = result.getResult().get();
+                Beautify.beautifyFile(cu, ctx);
+                writeFile(file, cu);
+                if (verboseEnable) {
+                    logger.info("Successfully processed file: {}", file.getPath());
+                }
+            } else {
+                logger.warn("Failed to parse file: {}", file.getPath());
+            }
+        } catch (IOException e) {
+            logger.error("IO error processing file: {}", file.getPath(), e);
+        } catch (Exception e) {
+            logger.error("Error processing file: {}", file.getPath(), e);
+        }
+    }
+
+    private void writeFile(File file, CompilationUnit cu) throws IOException {
+        synchronized (JFileReaderAndParser.class) {
+            FileReaderAndParserHelper.writeFile(file.getPath(), cu);
+        }
+    }
+
+    private void shutdownExecutor(ExecutorService executor) {
         executor.shutdown();
         try {
             if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
                 executor.shutdownNow();
+                logger.warn("Executor did not terminate in the specified time.");
             }
         } catch (InterruptedException e) {
             executor.shutdownNow();

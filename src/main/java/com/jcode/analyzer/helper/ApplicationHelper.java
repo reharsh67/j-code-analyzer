@@ -38,35 +38,7 @@ public class ApplicationHelper {
 
         for (String arg : args) {
             if (arg.startsWith("--")) {
-                switch (arg) {
-                    case JConstants.ALL:
-                        argMap.put(JConstants.ALL, true);
-                        ctx.add2ApplicationContext(JConstants.ALL, true);
-                        break;
-                    case JConstants.CONDITIONAL:
-                        argMap.put(JConstants.CONDITIONAL, true);
-                        ctx.add2ApplicationContext(JConstants.CONDITIONAL, true);
-                        break;
-                    case JConstants.VAR:
-                        argMap.put(JConstants.VAR, true);
-                        ctx.add2ApplicationContext(JConstants.VAR, true);
-                        break;
-                    case JConstants.INDENTANDWHITE:
-                        argMap.put(JConstants.INDENTANDWHITE, true);
-                        ctx.add2ApplicationContext(JConstants.INDENTANDWHITE, true);
-                        break;
-                    case JConstants.IMPORTS:
-                        argMap.put(JConstants.IMPORTS, true);
-                        ctx.add2ApplicationContext(JConstants.IMPORTS, true);
-                        break;
-                    case JConstants.EMPTYSTMT:
-                        argMap.put(JConstants.EMPTYSTMT, true);
-                        ctx.add2ApplicationContext(JConstants.EMPTYSTMT, true);
-                        break;
-                    default:
-                        logger.warn("Unknown option: {}", arg);
-                        break;
-                }
+                processArg(arg, argMap, ctx);
             } else {
                 processFilePath(arg, argMap, files, ctx);
             }
@@ -75,26 +47,60 @@ public class ApplicationHelper {
         ctx.add2ApplicationContext("JARGS", argMap);
     }
 
+    // Handle individual argument processing
+    private static void processArg(String arg, Map<String, Object> argMap, OperationContext ctx) {
+        switch (arg) {
+            case JConstants.ALL:
+                updateArgMapAndContext(argMap, ctx, JConstants.ALL, true);
+                break;
+            case JConstants.CONDITIONAL:
+                updateArgMapAndContext(argMap, ctx, JConstants.CONDITIONAL, true);
+                break;
+            case JConstants.VAR:
+                updateArgMapAndContext(argMap, ctx, JConstants.VAR, true);
+                break;
+            case JConstants.INDENTANDWHITE:
+                updateArgMapAndContext(argMap, ctx, JConstants.INDENTANDWHITE, true);
+                break;
+            case JConstants.IMPORTS:
+                updateArgMapAndContext(argMap, ctx, JConstants.IMPORTS, true);
+                break;
+            case JConstants.EMPTYSTMT:
+                updateArgMapAndContext(argMap, ctx, JConstants.EMPTYSTMT, true);
+                break;
+            default:
+                logger.warn("Unknown option: {}", arg);
+                break;
+        }
+    }
+
+    // Helper method to update the argument map and context
+    private static void updateArgMapAndContext(Map<String, Object> argMap, OperationContext ctx, String key, boolean value) {
+        argMap.put(key, value);
+        ctx.add2ApplicationContext(key, value);
+    }
+
     // Handle manual input for missing arguments
     public static void getManualInput(Map<String, Object> argMap) {
         List<File> files = new ArrayList<>();
         OperationContext ctx = OperationContext.getContext();
-        Scanner sc = new Scanner(System.in);
 
-        logger.info("Please provide path/to/your/java/file.java:");
-        String path = sc.nextLine();
-        processFilePath(path, argMap, files, ctx);
+        try (Scanner sc = new Scanner(System.in)) {
+            logger.info("Please provide path/to/your/java/file.java:");
+            String path = sc.nextLine();
+            processFilePath(path, argMap, files, ctx);
 
-        logger.info("Would you like verbose to be enabled Y/N?");
-        String verVal = sc.nextLine();
-        boolean verbose = verVal.equalsIgnoreCase("y");
-        argMap.put(JConstants.VERBOSE, verbose);
-        ctx.add2ApplicationContext(JConstants.VERBOSE, verbose);
+            logger.info("Would you like verbose to be enabled (Y/N)?");
+            String verVal = sc.nextLine();
+            boolean verbose = verVal.equalsIgnoreCase("y");
+            argMap.put(JConstants.VERBOSE, verbose);
+            ctx.add2ApplicationContext(JConstants.VERBOSE, verbose);
 
-        logger.info("Since this is manual input, all options will be considered.");
-        argMap.put(JConstants.ALL, true);
-        ctx.add2ApplicationContext(JConstants.ALL, true);
-        ctx.add2ApplicationContext("FileList", files);
+            logger.info("Since this is manual input, all options will be considered.");
+            argMap.put(JConstants.ALL, true);
+            ctx.add2ApplicationContext(JConstants.ALL, true);
+            ctx.add2ApplicationContext("FileList", files);
+        }
     }
 
     // Process the file path and add it to the context
@@ -104,6 +110,7 @@ public class ApplicationHelper {
             argMap.put(JConstants.PATH, path);
             ctx.add2ApplicationContext(JConstants.PATH, file.getAbsolutePath());
             files.add(file);
+            logger.info("Added file to context: {}", file.getAbsolutePath());
         } else {
             logger.error("File or directory not found: {}", path);
         }
@@ -113,6 +120,7 @@ public class ApplicationHelper {
     public static void init() {
         if (!isAlreadySet()) {
             OperationContextImpl.setContext(new OperationContextImpl());
+            logger.info("Operation context initialized.");
         }
     }
 
