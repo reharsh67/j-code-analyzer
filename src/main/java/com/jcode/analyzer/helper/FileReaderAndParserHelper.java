@@ -4,6 +4,9 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.jcode.analyzer.context.OperationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,16 +17,20 @@ import java.util.List;
 
 public class FileReaderAndParserHelper {
 
+    // SLF4J Logger
+    private static final Logger logger = LoggerFactory.getLogger(FileReaderAndParserHelper.class);
+
     // Method to parse a Java file into a CompilationUnit
     public static ParseResult<CompilationUnit> parse(File file) throws FileNotFoundException {
         JavaParser jp = new JavaParser();
         // Attempt to parse the file and return the result
         ParseResult<CompilationUnit> result = jp.parse(file);
-        // Print success or failure message
+
+        // Log success or failure message
         if (result.isSuccessful()) {
-            System.out.println("Successfully parsed file: " + file.getPath());
+            logger.info("Successfully parsed file: {}", file.getPath());
         } else {
-            System.err.println("Error parsing file: " + file.getPath());
+            logger.error("Error parsing file: {}", file.getPath());
         }
         return result;
     }
@@ -31,8 +38,8 @@ public class FileReaderAndParserHelper {
     // Method to write the CompilationUnit back to a file
     public static void writeFile(String path, CompilationUnit cu) throws IOException {
         Files.write(Paths.get(path), cu.toString().getBytes());
-        // Print confirmation message after writing to the file
-        System.out.println("Successfully wrote to file: " + path);
+        // Log confirmation message after writing to the file
+        logger.info("Successfully wrote to file: {}", path);
     }
 
     // Method to get all Java files from the provided context
@@ -41,6 +48,7 @@ public class FileReaderAndParserHelper {
         // Retrieve the list of files from the context
         List<File> files = (List<File>) ctx.get("FileList");
         List<File> javaFiles = new ArrayList<>();
+
         // Iterate through the files and collect Java files
         for (File file : files) {
             if (file.isDirectory()) {
@@ -50,8 +58,9 @@ public class FileReaderAndParserHelper {
                 javaFiles.add(file);
             }
         }
-        // Print the number of Java files found
-        System.out.println("Total Java files found: " + javaFiles.size());
+
+        // Log the number of Java files found
+        logger.info("Total Java files found: {}", javaFiles.size());
         return javaFiles;
     }
 
@@ -65,8 +74,8 @@ public class FileReaderAndParserHelper {
                     findJavaFilesInDirectory(file, javaFiles);
                 } else if (file.getName().endsWith(".java")) {
                     javaFiles.add(file);
-                    // Print message when a Java file is found
-                    System.out.println("Found Java file: " + file.getPath());
+                    // Log message when a Java file is found
+                    logger.info("Found Java file: {}", file.getPath());
                 }
             }
         }

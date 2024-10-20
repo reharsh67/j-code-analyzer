@@ -8,44 +8,60 @@ import com.jcode.analyzer.visitors.EmptyStmtVisitor;
 import com.jcode.analyzer.visitors.ImportsVisitor;
 import com.jcode.analyzer.visitors.UnUsedVariablesVisitor;
 import com.jcode.analyzer.visitors.WhiteSpaceAndIndentVisitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 public class Beautify {
 
+    // SLF4J Logger
+    private static final Logger logger = LoggerFactory.getLogger(Beautify.class);
+
     // Method to beautify the Java file represented by the CompilationUnit
     public static void beautifyFile(CompilationUnit cu, OperationContext ctx) throws IOException {
         // Check if all beautification options are enabled
-        if ((boolean) ctx.get(JConstants.ALL)) {
-            System.out.println("Applying all beautification options...");
-            cu.accept(new ConditionalVisitor(), null);
-            new ImportsVisitor().analyze(cu);
-            new UnUsedVariablesVisitor().analyze(cu);
-            cu.accept(new WhiteSpaceAndIndentVisitor(), null);
-            new EmptyStmtVisitor().analyze(cu);
+        if (Boolean.TRUE.equals(ctx.get(JConstants.ALL))) {
+            logger.info("Applying all beautification options...");
+            applyAllVisitors(cu);
         } else {
             // Apply individual beautification options based on the context
-            if ((boolean) ctx.get(JConstants.CONDITIONAL)) {
-                System.out.println("Applying conditional checks...");
-                cu.accept(new ConditionalVisitor(), null);
-            }
-            if ((boolean) ctx.get(JConstants.INDENTANDWHITE)) {
-                System.out.println("Checking whitespace and indentation...");
-                cu.accept(new WhiteSpaceAndIndentVisitor(), null);
-            }
-            if ((boolean) ctx.get(JConstants.VAR)) {
-                System.out.println("Analyzing unused variables...");
-                cu.accept(new UnUsedVariablesVisitor(), null);
-            }
-            if ((boolean) ctx.get(JConstants.IMPORTS)) {
-                System.out.println("Optimizing imports...");
-                cu.accept(new ImportsVisitor(), null);
-            }
-            if ((boolean) ctx.get(JConstants.EMPTYSTMT)) {
-                System.out.println("Removing empty statements...");
-                cu.accept(new EmptyStmtVisitor(), null);
-            }
+            applySelectedVisitors(cu, ctx);
         }
-        // Print completion message
-        System.out.println("Beautification process completed.");
+        // Log completion message
+        logger.info("Beautification process completed.");
+    }
+
+    // Method to apply all visitors
+    private static void applyAllVisitors(CompilationUnit cu) {
+        cu.accept(new ConditionalVisitor(), null);
+        new ImportsVisitor().analyze(cu);
+        new UnUsedVariablesVisitor().analyze(cu);
+        cu.accept(new WhiteSpaceAndIndentVisitor(), null);
+        new EmptyStmtVisitor().analyze(cu);
+    }
+
+    // Method to apply selected visitors based on the context
+    private static void applySelectedVisitors(CompilationUnit cu, OperationContext ctx) {
+        if (Boolean.TRUE.equals(ctx.get(JConstants.CONDITIONAL))) {
+            logger.info("Applying conditional checks...");
+            cu.accept(new ConditionalVisitor(), null);
+        }
+        if (Boolean.TRUE.equals(ctx.get(JConstants.INDENTANDWHITE))) {
+            logger.info("Checking whitespace and indentation...");
+            cu.accept(new WhiteSpaceAndIndentVisitor(), null);
+        }
+        if (Boolean.TRUE.equals(ctx.get(JConstants.VAR))) {
+            logger.info("Analyzing unused variables...");
+            cu.accept(new UnUsedVariablesVisitor(), null);
+        }
+        if (Boolean.TRUE.equals(ctx.get(JConstants.IMPORTS))) {
+            logger.info("Optimizing imports...");
+            cu.accept(new ImportsVisitor(), null);
+        }
+        if (Boolean.TRUE.equals(ctx.get(JConstants.EMPTYSTMT))) {
+            logger.info("Removing empty statements...");
+            cu.accept(new EmptyStmtVisitor(), null);
+        }
     }
 }
